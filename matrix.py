@@ -147,7 +147,7 @@ class Matrix:
             inverse = self.get_adjoint().multiply(1/determinant)
             return inverse
 
-
+#sample code
 A = Matrix(3, 3)
 A.matrix = [[7, 4, 9], [8, -3, -6], [2, -1, -3]]
 B = Matrix(1, 3)
