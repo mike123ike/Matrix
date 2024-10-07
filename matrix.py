@@ -44,8 +44,9 @@ class Matrix:
         self.columns = len(self.matrix[0])
         for i in range(self.rows):
             for j in range(self.columns):
-                if self.matrix[i][j].is_integer():
-                    self.matrix[i][j] = int(self.matrix[i][j])
+                if not isinstance(self.matrix[i][j], int):
+                    if self.matrix[i][j].is_integer():
+                        self.matrix[i][j] = int(self.matrix[i][j])
 
     def duplicate(self):
         self.update()
