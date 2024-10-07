@@ -61,14 +61,12 @@ class Matrix:
             row = int(input('Which row do you want to edit? ')) - 1
             if row in range(self.rows):
                 break
-            print("The matrix does not have that many rows.")
-        
+            print("The matrix does not have that many rows.")     
         while True:
             column = int(input("Which column do you want to edit? ")) - 1
             if column in range(self.columns):
                 break
             print("The matrix does not have that many columns.")
-
         while True:
             number = input("What do you want to change this cell to? ")
             if number.isdigit():
@@ -94,7 +92,6 @@ class Matrix:
                 for num in range(self.columns):
                     result.matrix[row][num] = self.matrix[row][num]*other
             return result
-
         elif self.columns == other.rows:
             result = Matrix(self.rows, other.columns)
             for i in range(self.rows):
