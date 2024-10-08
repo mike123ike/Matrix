@@ -83,6 +83,7 @@ class Matrix:
             for row in self.matrix:
                 for column in range(self.columns):
                     result.matrix[row][column] = self.matrix[row][column] + other.matrix[row][column]
+            result.update
             return result
         
     def multiply(self, other):
@@ -98,6 +99,7 @@ class Matrix:
                 for j in range(other.columns):
                     for k in range(other.rows):
                         result.matrix[i][j] += self.matrix[i][k] * other.matrix[k][j]
+            result.update()
             return result
         
     def transpose(self):
@@ -137,7 +139,7 @@ class Matrix:
         for i in range(self.rows):
             for j in range(self.columns):
                 cofactor_matrix.matrix[i][j] = self.get_cofactor(i, j)
-        adjoint_matrix = cofactor_matrix.duplicate().transpose()
+        adjoint_matrix = cofactor_matrix.transpose()
         return adjoint_matrix
         
     def invert(self):
