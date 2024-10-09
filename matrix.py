@@ -1,5 +1,6 @@
 class Matrix:
     def __init__(self, rows=None, columns=None):
+        self.determinant = None
         if columns != None:
             self.columns = columns
             self.rows = rows
@@ -76,6 +77,7 @@ class Matrix:
         if number.is_integer():
             number = int(number)
         self.matrix[row][column] = number
+        self.determinant = None
 
     def add(self, other):
         if isinstance(other, Matrix) and other.rows == self.rows and other.columns == self.columns:
@@ -83,7 +85,7 @@ class Matrix:
             for row in self.matrix:
                 for column in range(self.columns):
                     result.matrix[row][column] = self.matrix[row][column] + other.matrix[row][column]
-            result.update
+            result.update()
             return result
         
     def multiply(self, other):
@@ -92,15 +94,14 @@ class Matrix:
             for row in range(self.rows):
                 for num in range(self.columns):
                     result.matrix[row][num] = self.matrix[row][num]*other
-            return result
         elif self.columns == other.rows:
             result = Matrix(self.rows, other.columns)
             for i in range(self.rows):
                 for j in range(other.columns):
                     for k in range(other.rows):
                         result.matrix[i][j] += self.matrix[i][k] * other.matrix[k][j]
-            result.update()
-            return result
+        result.update()
+        return result
         
     def transpose(self):
         result = Matrix(self.columns, self.rows)
@@ -122,17 +123,19 @@ class Matrix:
     def get_determinant(self):
         matrix = self.matrix
         self.update()
-        if self.columns == self.rows == 1:
-            return self.matrix[0][0]
-        elif self.columns == self.rows == 2:
-            determinant = (matrix[0][0]*matrix[1][1]) - (matrix[1][0]*matrix[0][1])
-            return determinant
-        elif self.columns == self.rows:
-            total = 0
-            for i in range(self.columns):
-                a = matrix[0][i]
-                total += a * self.get_cofactor(0, i)
-            return total
+        if not self.determinant:
+            if self.columns == self.rows == 1:
+                self.determinant = self.matrix[0][0]
+            elif self.columns == self.rows == 2:
+                determinant = (matrix[0][0]*matrix[1][1]) - (matrix[1][0]*matrix[0][1])
+                self.determinant = determinant
+            elif self.columns == self.rows:
+                total = 0
+                for i in range(self.columns):
+                    a = matrix[0][i]
+                    total += a * self.get_cofactor(0, i)
+                self.determinant = total
+        return self.determinant
         
     def get_adjoint(self):
         cofactor_matrix = Matrix(self.rows, self.columns)
