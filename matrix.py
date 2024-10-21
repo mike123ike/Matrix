@@ -82,7 +82,7 @@ class Matrix:
     def add(self, other):
         if isinstance(other, Matrix) and other.rows == self.rows and other.columns == self.columns:
             result = Matrix(self.rows, self.columns)
-            for row in self.matrix:
+            for row in range(self.rows):
                 for column in range(self.columns):
                     result.matrix[row][column] = self.matrix[row][column] + other.matrix[row][column]
             result.update()
@@ -158,4 +158,11 @@ class Matrix:
             result = self.duplicate()
             for i in range(power-1):
                 result = self.multiply(result)
+            return result
+    
+    def trace(self):
+        if self.rows == self.columns:
+            result = 0
+            for i in range(self.rows):
+                result += self.matrix[i][i]
             return result
