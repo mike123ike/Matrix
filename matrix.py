@@ -1,41 +1,39 @@
 class Matrix:
-	def __init__(self, rows=0, columns=0, data=None):
+	def __init__(self, rows=0, columns=0):
 		self.determinant = None
-		if data:
-			# check if data is a list/tuple of lists/tuples
-			# all sub-sequences are the same length
-			# all entries inside the sub-sequences are ints or floats
-			if isinstance(data, (list, tuple)) and all([
-				isinstance(row, (list, tuple)) and
-				len(row) == len(data[0]) and
-				all([isinstance(entry, (int, float)) for entry in row]) 
-				for row in data]):
-				self.rows = len(data)
-				self.columns = len(data[0])
-				self.matrix = data
-		else:
-			self.columns = columns
-			self.rows = rows
-			self.matrix = [[0 for column in range(self.columns)] for row in range(self.rows)]
+		self.rows = rows
+		self.columns = columns
+		self.matrix = [[0 for column in range(self.columns)] for row in range(self.rows)]
 		
 	def update(self):
+		# Update the number of rows and columns
 		self.rows = len(self.matrix)
-		self.columns = len(self[0])
-		self.matrix = [[int(entry) if (not isinstance(entry, int)) and (entry.is_integer()) else entry for entry in row] for row in self.matrix]
+		self.columns = len(self.matrix[0]) if self.rows > 0 else 0
 
+		# Update the matrix values with proper handling of floating-point inaccuracies
+		for i in range(self.rows):
+			for j in range(self.columns):
+				entry = self[i][j]
+				if isinstance(entry, float):
+					# Round to the specified number of decimal places
+					rounded_entry = round(entry, 7)
+					# If the rounded value is close to an integer, convert it to an integer
+					if abs(rounded_entry - round(rounded_entry)) < 1e-7:
+						self[i][j] = round(rounded_entry)
+					else:
+						self[i][j] = rounded_entry
+	
 	def duplicate(self):
 		self.update()
 		duplicate = Matrix(self.rows, self.columns)
-		duplicate.matrix = [row[:] for row in self.matrix]
+		duplicate.matrix = [row[:] for row in self]
 		duplicate.determinant = self.determinant
 		return duplicate
 
 	def __add__(self, other):
 		if isinstance(other, Matrix) and other.rows == self.rows and other.columns == self.columns:
 			result = Matrix(self.rows, self.columns)
-			for row in range(self.rows):
-				for column in range(self.columns):
-					result[row][column] = self[row][column] + other[row][column]
+			result.matrix = [[self[x][y] + other[x][y] for y in range(self.columns)] for x in range(self.rows)]
 			result.update()
 			return result
 		else:
@@ -44,7 +42,7 @@ class Matrix:
 	def __mul__(self, other):
 		if isinstance(other, (int, float)):
 			result = self.duplicate()
-			result.matrix = [[entry*other for entry in row] for row in result.matrix]
+			result.matrix = [[entry*other for entry in row] for row in result]
 		elif isinstance(other, Matrix) and self.columns == other.rows:
 			result = Matrix(self.rows, other.columns)
 			result.matrix = [[sum(self[i][k] * other[k][j] for k in range(other.rows)) for j in range(other.columns)] for i in range(self.rows)]
@@ -56,34 +54,38 @@ class Matrix:
 	def transpose(self):
 		result = Matrix(self.columns, self.rows)
 		result.matrix = [[self[j][i]for j in range(result.columns)] for i in range(result.rows)]
+		result.update()
 		return result
 
 	def get_determinant(self):
-		if not self.determinant:
-			if self.rows == self.columns:
-				result = self.duplicate() # initialize result matrix
-				swaps = 0 # set swap counter
-				# loop through each row starting from the top (forward elimination)
-				for i in range(result.rows):
-					# swap current row with a row below until pivot is not 0
-					if result[i][i] == 0:
-						for j in range(i+1, result.rows):
-							if result[j][i] != 0:
-								result[i], result[j] = result[j], result[i]
-								swaps += 1
-								break
-							elif j == result.rows - 1:
-								self.determinant = 0
-								return 0
-					# eliminate entries below pivot of current row
-					for row in range(i+1, result.rows):
-						if result[row][i] != 0:
-							result[row] = [(result[row][j] - result[row][i]/result[i][i]*result[i][j]) for j in range(result.columns)]
-				product = (-1)**swaps
-				for i in range(result.rows): product *= result[i][i]
-				self.determinant = product
-			else:
-				raise ValueError('Only square matrices have a determinant')
+		if self.determinant == None:
+			if self.rows != self.columns: raise ValueError('Only square matrices have a determinant')
+			result = self.duplicate() # initialize result matrix
+			swaps = 0 # set swap counter
+			# loop through each row starting from the top (forward elimination)
+			for i in range(result.rows):
+				# swap current row with a row below until pivot is not 0
+				if result[i][i] == 0:
+					for j in range(i+1, result.rows):
+						if result[j][i] != 0:
+							result[i], result[j] = result[j], result[i]
+							swaps += 1
+							break
+						elif j == result.rows - 1:
+							self.determinant = 0
+							return 0
+				# eliminate entries below pivot of current row
+				for row in range(i+1, result.rows):
+					if result[row][i] != 0:
+						result[row] = [(result[row][j] - result[row][i]/result[i][i]*result[i][j]) for j in range(result.columns)]
+			product = (-1)**swaps
+			for i in range(result.rows): product *= result[i][i]
+			if isinstance(product, float) and abs(product-(rounded:=round(product, 5))) < 1e-5:
+				product = rounded
+				if product == int(product):
+					product = int(product)
+
+			self.determinant = product
 		return self.determinant
 
 	def rref(self):
@@ -124,6 +126,7 @@ class Matrix:
 			for column in range(result.columns):
 				if abs(result[i][column] - 1) < 1e-9:
 					pivot = column
+					break
 			if pivot != None:
 				for row in range(i-1, -1, -1):
 					result[row] = [(result[row][j] - result[row][pivot]*result[i][j]) for j in range(result.columns)]
@@ -132,24 +135,25 @@ class Matrix:
 		return result
 		
 	def invert(self):
-		if self.rows == self.columns:
-			# Augment matrix with identity matrix
-			aug_matrix = Matrix(self.rows, self.columns*2)
-			for i in range(self.rows):
-				for j in range(self.columns):
-					aug_matrix[i][j] = self[i][j]
-				aug_matrix[i][i+self.columns] = 1
-			aug_matrix = aug_matrix.rref()
-			# return right half of augmented matrix if self.matrix is not singular
-			# in singular matrices in rref, last row is all zeros
-			if any(aug_matrix[-1][:self.columns]):
-				result = Matrix(self.rows, self.columns)
-				result.matrix = [row[self.columns:] for row in aug_matrix.matrix]
-				return result
-			else:
-				raise ValueError('Singular matrices cannot be inverted')
+		if self.rows != self.columns: raise ValueError('Only square matrices can be inverted')
+		
+		# Augment matrix with identity matrix
+		aug_matrix = Matrix(self.rows, self.columns*2)
+		for i in range(self.rows):
+			for j in range(self.columns):
+				aug_matrix[i][j] = self[i][j]
+			aug_matrix[i][i+self.columns] = 1
+		aug_matrix = aug_matrix.rref()
+		# return right half of augmented matrix if self.matrix is not singular
+		# in singular matrices in rref, last row is all zeros
+		if any(aug_matrix[-1][:self.columns]):
+			result = Matrix(self.rows, self.columns)
+			result.matrix = [row[self.columns:] for row in aug_matrix]
+			if self.determinant:
+				result.determinant = 1/self.determinant
+			return result
 		else:
-			raise ValueError('Only square matrices can be inverted')
+			raise ValueError('Singular matrices cannot be inverted')
 		
 	def __pow__(self, power):
 		if self.rows == self.columns and isinstance(power, int):
@@ -189,7 +193,62 @@ class Matrix:
 			raise ValueError('Matrices can only be divided by numbers')
 	
 	def __getitem__(self, key):
-		return self.matrix[key]
-	
+		if isinstance(key, int):
+			try:
+				return self.matrix[key]
+			except IndexError:
+				raise IndexError('matrix index out of range')
+		elif isinstance(key, (tuple, list)):
+			try:
+				match len(key):
+					case 1:
+						return self.matrix[key[0]]
+					case 2:
+						row, col = key
+						return self.matrix[row][col]
+					case _:
+						raise IndexError('key argument only accepts 1 or 2 indices')
+			except IndexError:
+				raise IndexError('matrix index out of range')
+		else:
+			raise TypeError(f'matrix indices must be tuples, lists, or ints, not {str(type(key))[8:-2]}')
+
 	def __setitem__(self, key, value):
-		self.matrix[key] = value
+		if isinstance(key, int):
+			try:
+				self.matrix[key] = value
+			except IndexError:
+				raise IndexError('matrix index out of range')
+		elif isinstance(key, (tuple, list)):
+			try:
+				match len(key):
+					case 1:
+						self.matrix[key[0]] = value
+					case 2:
+						row, col = key
+						self.matrix[row][col] = value
+					case _:
+						raise IndexError('key argument only accepts 1 or 2 indices')
+			except IndexError:
+					raise IndexError('matrix index out of range')
+		else:
+			raise TypeError(f'matrix indices must be tuples, lists, or ints, not {str(type(key))[8:-2]}')
+		self.determinant = None
+		self.update()
+
+	def __repr__(self):
+		return str(self.matrix)
+	
+	def __eq__(self, other):
+		if not isinstance(other, Matrix):
+			return False
+		return self.matrix == other.matrix
+
+	def __iter__(self):
+		return iter(self.matrix)
+	
+	def __rmul__(self, other):
+		if isinstance(other, (int, float)):
+			return self * other
+		else:
+			raise ValueError('Matrices can only be multiplied by numbers')
